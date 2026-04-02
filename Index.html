@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command Center — Clasificatorio Landfall</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --gold: #7ec8e3;
+      --gold-light: #e0f4ff;
+      --dark-bg: #060c18;
+      --card-bg: #0b1528;
+      --card-border: #152040;
+      --text-muted: #5a7a9a;
+      --accent: #3a9fd8;
+      --accent-bright: #7ee8ff;
+      --rank1: #7ee8ff;
+      --rank2: #c0d8f0;
+      --rank3: #5b8fb9;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--dark-bg);
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(62,140,210,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 100%, rgba(30,80,160,0.15) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 50%, rgba(10,40,100,0.3) 0%, transparent 80%);
+      color: #daeeff;
+      font-family: 'Raleway', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .site-header {
+      border-bottom: 1px solid rgba(62,160,220,0.25);
+      padding: 24px 0 16px;
+      background: linear-gradient(180deg, rgba(30,90,170,0.12) 0%, transparent 100%);
+    }
+    .site-header h1 {
+      font-family: 'Cinzel', serif;
+      font-weight: 900;
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      letter-spacing: 0.08em;
+      color: var(--gold-light);
+      text-shadow: 0 0 30px rgba(100,200,255,0.5), 0 0 60px rgba(60,140,220,0.3);
+    }
+    .site-header .subtitle {
+      font-size: 0.78rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+    .gold-divider {
+      height: 2px;
+      width: 60px;
+      background: linear-gradient(90deg, transparent, var(--accent-bright), transparent);
+      margin: 8px auto 0;
+      box-shadow: 0 0 8px rgba(126,232,255,0.5);
+    }
+
+    /* STATS BAR */
+    .stats-bar {
+      background: rgba(10,30,70,0.5);
+      border-bottom: 1px solid var(--card-border);
+      padding: 10px 0;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(40,100,180,0.12);
+      border: 1px solid rgba(62,160,220,0.2);
+      color: #8ab8d8;
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    .stat-pill span.num { color: var(--accent-bright); }
+
+    /* SEARCH & SORT */
+    .controls-row { padding: 20px 0 8px; }
+    .search-input {
+      background: rgba(10,30,70,0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: #daeeff;
+      padding: 8px 14px;
+      font-family: 'Raleway', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus { border-color: rgba(62,160,220,0.5); box-shadow: 0 0 0 2px rgba(62,160,220,0.1); }
+    .sort-btn {
+      background: rgba(10,30,70,0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: #6a9ab8;
+      padding: 7px 14px;
+      font-size: 0.78rem;
+      font-family: 'Raleway', sans-serif;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .sort-btn.active, .sort-btn:hover {
+      border-color: rgba(62,160,220,0.4);
+      color: var(--accent-bright);
+      background: rgba(40,100,180,0.15);
+    }
+
+    /* PLAYER CARD */
+    .player-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s;
+      cursor: pointer;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .player-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(62,160,220,0.25), 0 0 20px rgba(62,160,220,0.08);
+      border-color: rgba(62,160,220,0.35);
+    }
+
+    /* IMAGE AREA */
+    .card-image-area {
+      position: relative;
+      height: 140px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0d1e3a 0%, #060c18 100%);
+      flex-shrink: 0;
+    }
+    .card-bg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.55;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .player-card:hover .card-bg-img { opacity: 0.72; transform: scale(1.04); }
+    .card-bg-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0d1e3a 0%, #060c18 100%);
+    }
+    .placeholder-icon {
+      font-size: 3rem;
+      opacity: 0.12;
+      filter: grayscale(1);
+    }
+    .card-image-area::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(6,12,24,0) 25%, rgba(6,12,24,0.88) 100%);
+    }
+
+    /* RANK BADGE */
+    .rank-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 2;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border: 1.5px solid rgba(255,255,255,0.15);
+    }
+    .rank-1 { background: linear-gradient(135deg, #1a6fb5, #7ee8ff); color: #03111f; border-color: #7ee8ff; box-shadow: 0 0 12px rgba(126,232,255,0.5); }
+    .rank-2 { background: linear-gradient(135deg, #2a5a8a, #b0d8f5); color: #061828; border-color: #b0d8f5; }
+    .rank-3 { background: linear-gradient(135deg, #1a3d6a, #5b8fb9); color: #061020; border-color: #5b8fb9; }
+    .rank-other { background: rgba(10,25,55,0.9); color: var(--text-muted); border-color: rgba(62,120,180,0.2); }
+
+    /* COMMANDER name overlay on image */
+    .commander-overlay {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      right: 10px;
+      z-index: 2;
+      font-size: 0.72rem;
+      color: rgba(200,230,255,0.8);
+      font-style: italic;
+      font-weight: 300;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0.02em;
+    }
+    .commander-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent-bright);
+      font-style: normal;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 1px;
+    }
+
+    /* CARD BODY */
+    .card-body-inner {
+      padding: 12px 14px 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .player-name {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #cee8ff;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* SCORE ROW */
+    .score-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .score-chip {
+      flex: 1;
+      background: rgba(20,50,100,0.3);
+      border: 1px solid rgba(40,90,160,0.25);
+      border-radius: 6px;
+      padding: 5px 6px;
+      text-align: center;
+    }
+    .score-chip .sc-label {
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      display: block;
+    }
+    .score-chip .sc-val {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #a8d8f0;
+    }
+    .score-chip.total { background: rgba(30,90,160,0.2); border-color: rgba(62,160,220,0.3); }
+    .score-chip.total .sc-val { color: var(--accent-bright); }
+
+    /* FOOTER ROW */
+    .card-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(40,80,140,0.3);
+      padding-top: 10px;
+      margin-top: auto;
+    }
+    .place-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+    .deck-link {
+      font-size: 0.68rem;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      opacity: 0.85;
+      transition: opacity 0.2s, color 0.2s;
+      font-weight: 600;
+    }
+    .deck-link:hover { opacity: 1; color: var(--accent-bright); }
+
+    /* TOP 3 SPECIAL GLOW */
+    .player-card.top1 { border-color: rgba(126,232,255,0.3); box-shadow: 0 0 30px rgba(126,232,255,0.09); }
+    .player-card.top2 { border-color: rgba(176,216,245,0.2); }
+    .player-card.top3 { border-color: rgba(91,143,185,0.2); }
+
+    /* SECTION TITLE */
+    .section-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-label::before, .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--card-border);
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--dark-bg); }
+    ::-webkit-scrollbar-thumb { background: #152040; border-radius: 3px; }
+
+    @media (max-width: 576px) {
+      .card-image-area { height: 110px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="site-header text-center">
+    <div class="container">
+      <p class="subtitle mb-1">Command Center · Commander Tournament</p>
+      <h1>✦ Clasificatorio Landfall</h1>
+      <div class="gold-divider"></div>
+    </div>
+  </header>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="container">
+      <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
+        <span class="stat-pill">🧙 Jugadores: <span class="num">{{ jugadores.length }}</span></span>
+        <span class="stat-pill">🏆 Líder: <span class="num">{{ top1?.Jugador }}</span></span>
+        <span class="stat-pill">⚡ Max Puntos: <span class="num">{{ top1?.Total }}</span></span>
+        <span class="stat-pill">🃏 Mazos: <span class="num">{{ jugadores.length }}</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="container controls-row">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <input
+        class="search-input"
+        style="max-width:240px"
+        v-model="busqueda"
+        placeholder="🔍  Buscar jugador..."
+      />
+      <div class="d-flex gap-2 flex-wrap">
+        <button
+          v-for="opt in sortOpts"
+          :key="opt.key"
+          class="sort-btn"
+          :class="{ active: sortKey === opt.key }"
+          @click="sortKey = opt.key"
+        >{{ opt.label }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRID -->
+  <div class="container pb-5">
+
+    <!-- TOP 3 -->
+    <template v-if="!busqueda && top3.length">
+      <div class="section-label">Podium</div>
+      <div class="row g-3 mb-4">
+        <div
+          v-for="(j, i) in top3"
+          :key="j.Jugador"
+          class="col-12 col-sm-6 col-md-4"
+        >
+          <div
+            class="player-card"
+            :class="['top'+(i+1)]"
+          >
+            <!-- Image -->
+            <div class="card-image-area">
+              <img v-if="j.IMG" :src="j.IMG" :alt="j.Comandante" class="card-bg-img"/>
+              <div v-else class="card-bg-placeholder">
+                <span class="placeholder-icon">🧙</span>
+              </div>
+              <span class="rank-badge" :class="'rank-'+(i+1)">{{ i+1 }}</span>
+              <span class="commander-overlay">
+                <span class="commander-label">Comandante</span>
+                {{ j.Comandante || 'Sin especificar' }}
+              </span>
+            </div>
+            <!-- Body -->
+            <div class="card-body-inner">
+              <div class="player-name">{{ j.Jugador }}</div>
+              <div class="score-row">
+                <div class="score-chip">
+                  <span class="sc-label">P. Final</span>
+                  <span class="sc-val">{{ j['P Final'] }}</span>
+                </div>
+                <div class="score-chip">
+                  <span class="sc-label">P. Bonus</span>
+                  <span class="sc-val">{{ j['P Bonus'] }}</span>
+                </div>
+                <div class="score-chip total">
+                  <span class="sc-label">Total</span>
+                  <span class="sc-val">{{ j.Total }}</span>
+                </div>
+              </div>
+              <div class="card-footer-row">
+                <span class="place-tag">{{ ordinal(i+1) }} lugar</span>
+                <a :href="j.URL" target="_blank" class="deck-link">Ver mazo →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- REST -->
+    <template v-if="resto.length">
+      <div class="section-label" v-if="!busqueda">Participantes</div>
+      <div class="section-label" v-else>Resultados ({{ filtrados.length }})</div>
+      <div class="row g-3">
+        <div
+          v-for="(j) in (busqueda ? filtrados : resto)"
+          :key="j.Jugador"
+          class="col-12 col-sm-6 col-md-4 col-lg-3"
+        >
+          <div class="player-card">
+            <div class="card-image-area">
+              <img v-if="j.IMG" :src="j.IMG" :alt="j.Comandante" class="card-bg-img"/>
+              <div v-else class="card-bg-placeholder">
+                <span class="placeholder-icon">⚔️</span>
+              </div>
+              <span class="rank-badge rank-other">{{ j._rank }}</span>
+              <span class="commander-overlay">
+                <span class="commander-label">Comandante</span>
+                {{ j.Comandante || 'Sin especificar' }}
+              </span>
+            </div>
+            <div class="card-body-inner">
+              <div class="player-name">{{ j.Jugador }}</div>
+              <div class="score-row">
+                <div class="score-chip">
+                  <span class="sc-label">P. Final</span>
+                  <span class="sc-val">{{ j['P Final'] }}</span>
+                </div>
+                <div class="score-chip">
+                  <span class="sc-label">P. Bonus</span>
+                  <span class="sc-val">{{ j['P Bonus'] }}</span>
+                </div>
+                <div class="score-chip total">
+                  <span class="sc-label">Total</span>
+                  <span class="sc-val">{{ j.Total }}</span>
+                </div>
+              </div>
+              <div class="card-footer-row">
+                <span class="place-tag">{{ ordinal(j._rank) }} lugar</span>
+                <a :href="j.URL" target="_blank" class="deck-link">Ver mazo →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <div v-if="filtrados.length === 0 && busqueda" class="empty-state">
+      No se encontraron jugadores con "<strong>{{ busqueda }}</strong>"
+    </div>
+  </div>
+
+</div>
+
+<script>
+const { createApp } = Vue;
+
+const DATA = [
+  {
+    "Jugador": "Ronald Fisher",
+    "P Final": 19,
+    "P Bonus": 11,
+    "Total": 30,
+    "URL": "https://moxfield.com/decks/K5h_bWUU-kSXiHo3p0d8Sw",
+    "Comandante": "Hidetsugu and Kairi",
+    "IMG": ".\\img\\hidetsugu.png"
+  },
+  {
+    "Jugador": "Thomas Fisher",
+    "P Final": 17,
+    "P Bonus": 4,
+    "Total": 21,
+    "URL": "https://moxfield.com/decks/FC-dL-xoKkuCNu3L5I6CJg",
+    "Comandante": "Tivit, Seller of Secrets",
+    "IMG": ".\\img\\tivit.png"
+  },
+  {
+    "Jugador": "Rodrigo Briones",
+    "P Final": 15,
+    "P Bonus": 4,
+    "Total": 19,
+    "URL": "https://moxfield.com/decks/pGGV5mKAAUS6pjH_td6itg",
+    "Comandante": "Adeline, Resplendent Cathar",
+    "IMG": ".\\img\\adeline.png"
+  },
+  {
+    "Jugador": "Jesus hernandez",
+    "P Final": 13,
+    "P Bonus": 5,
+    "Total": 18,
+    "URL": "https://moxfield.com/decks/kL6O_dGSa0yyY7T4oXxd8g",
+    "Comandante": "Winota, Joiner of Forces",
+    "IMG": ".\\img\\winota.png"
+  },
+  {
+    "Jugador": "Gustavo Guzman",
+    "P Final": 13,
+    "P Bonus": 4,
+    "Total": 17,
+    "URL": "https://moxfield.com/decks/wYUdtNGMIk20h9TV1nBsIg",
+    "Comandante": "Chatterfang, Squirrel General",
+    "IMG": ".\\img\\chatterfang.png"
+  },
+  {
+    "Jugador": "Carlos Lopez",
+    "P Final": 11,
+    "P Bonus": 4,
+    "Total": 15,
+    "URL": "https://moxfield.com/decks/WcW-LketPUC8XIYgULlz7w",
+    "Comandante": "Winota, Joiner of Forces",
+    "IMG": ".\\img\\winota.png"
+  },
+  {
+    "Jugador": "Francisco Gomez",
+    "P Final": 9,
+    "P Bonus": 6,
+    "Total": 15,
+    "URL": "https://moxfield.com/decks/2vA9aOvm-0KerT-51sNVnQ",
+    "Comandante": "Ygra, Eater of All",
+    "IMG": ".\\img\\ygra.png"
+  },
+  {
+    "Jugador": "Victoria Wentelikan",
+    "P Final": 12,
+    "P Bonus": 2,
+    "Total": 14,
+    "URL": "https://moxfield.com/decks/u8FX0DcEUEuNIGdJ02XPSw",
+    "Comandante": "Meren of Clan Nel Toth",
+    "IMG": ".\\img\\meren.png"
+  },
+  {
+    "Jugador": "Jorge Herrera",
+    "P Final": 11,
+    "P Bonus": 2,
+    "Total": 13,
+    "URL": "https://moxfield.com/decks/4i0_7f4nFEuFxTYamVxNUA",
+    "Comandante": "Abdel Adrian, Gorion's Ward // Candlekeep Sage",
+    "IMG": ".\\img\\abdelcandle.png"
+  },
+  {
+    "Jugador": "Bryan Ortiz",
+    "P Final": 10,
+    "P Bonus": 3,
+    "Total": 13,
+    "URL": "https://moxfield.com/decks/mUG_yYbQsUqAhOtYOsYlqw",
+    "Comandante": "Karlov of the Ghost Council",
+    "IMG": ".\\img\\karlov.png"
+  },
+  {
+    "Jugador": "Victoria Villalobos",
+    "P Final": 12,
+    "P Bonus": 0,
+    "Total": 12,
+    "URL": "https://moxfield.com/decks/xjFBDR_4VEOjwGHjDu4uxg",
+    "Comandante": "Talion, the Kindly Lord",
+    "IMG": ".\\img\\talion.png"
+  },
+  {
+    "Jugador": "Sofia Parra",
+    "P Final": 11,
+    "P Bonus": 1,
+    "Total": 12,
+    "URL": "https://moxfield.com/decks/apuiK56Bgkm4C8SN7IHGdg",
+    "Comandante": "Longshot, Rebel Bowman",
+    "IMG": ".\\img\\longshot.png"
+  },
+  {
+    "Jugador": "Guiselle Orellana",
+    "P Final": 10,
+    "P Bonus": 2,
+    "Total": 12,
+    "URL": "https://moxfield.com/decks/oFLx_7bUUEKykemA1FUqTg",
+    "Comandante": "Niv-Mizzet, Parun",
+    "IMG": ".\\img\\nivparun.png"
+  },
+  {
+    "Jugador": "Esteban Vasquez",
+    "P Final": 9,
+    "P Bonus": 3,
+    "Total": 12,
+    "URL": "https://moxfield.com/decks/6cTOxU8DiUCmHEDMgKlq5A",
+    "Comandante": "Brago, King Eternal",
+    "IMG": ".\\img\\brago.png"
+  },
+  {
+    "Jugador": "Pilar Vera",
+    "P Final": 11,
+    "P Bonus": 0,
+    "Total": 11,
+    "URL": "https://moxfield.com/decks/kaXmqTYk-0Oyc0g-TgAJOQ",
+    "Comandante": "Orvar, the All-Form",
+    "IMG": ".\\img\\orvar.png"
+  },
+  {
+    "Jugador": "Antonia Donoso",
+    "P Final": 11,
+    "P Bonus": 0,
+    "Total": 11,
+    "URL": "https://moxfield.com/decks/j_zJvORdEke36i-uItiQ_Q",
+    "Comandante": "Ygra, Eater of All",
+    "IMG": ".\\img\\ygra.png"
+  },
+  {
+    "Jugador": "Emanuel",
+    "P Final": 8,
+    "P Bonus": 3,
+    "Total": 11,
+    "URL": "https://moxfield.com/decks/3B15h90EHkaX0eqqrqjYwQ",
+    "Comandante": "Magda, Brazen Outlaw",
+    "IMG": ".\\img\\magda.png"
+  },
+  {
+    "Jugador": "Ruben Milesi",
+    "P Final": 10,
+    "P Bonus": 0,
+    "Total": 10,
+    "URL": "https://moxfield.com/decks/MfdJgSYqPUGjkTi1Jxpj8Q",
+    "Comandante": "Urza, Lord High Artificer",
+    "IMG": ".\\img\\urza.png"
+  },
+  {
+    "Jugador": "Francisco Fierro",
+    "P Final": 9,
+    "P Bonus": 1,
+    "Total": 10,
+    "URL": "https://moxfield.com/decks/-isQol7QA0KvrRR-SXNYDQ",
+    "Comandante": "Shroofus Sproutsire",
+    "IMG": ".\\img\\shroofus.png"
+  },
+  {
+    "Jugador": "Erin Morcillo",
+    "P Final": 9,
+    "P Bonus": 0,
+    "Total": 9,
+    "URL": "https://moxfield.com/decks/0ngjNjXM40CIV2zi9CtrKA",
+    "Comandante": "Tayam, Luminous Enigma",
+    "IMG": ".\\img\\tayam.png"
+  },
+  {
+    "Jugador": "Franco Zarate",
+    "P Final": 8,
+    "P Bonus": 0,
+    "Total": 8,
+    "URL": "https://moxfield.com/decks/HqTrvzQH9UexRBYDeZy8yA",
+    "Comandante": "Chulane, Teller of Tales",
+    "IMG": ".\\img\\chulane.png"
+  }
+];
+
+createApp({
+  data() {
+    return {
+      jugadores: [],
+      busqueda: '',
+      sortKey: 'Total',
+      sortOpts: [
+        { key: 'Total',    label: '▼ Total' },
+        { key: 'P Final',  label: '▼ P. Final' },
+        { key: 'P Bonus',  label: '▼ P. Bonus' },
+        { key: 'Jugador',  label: 'A–Z' },
+      ]
+    };
+  },
+  computed: {
+    sorted() {
+      const key = this.sortKey;
+      return [...this.jugadores].sort((a, b) => {
+        if (key === 'Jugador') return a[key].localeCompare(b[key]);
+        return b[key] - a[key];
+      }).map((j, i) => ({ ...j, _rank: i + 1 }));
+    },
+    filtrados() {
+      if (!this.busqueda) return this.sorted;
+      const q = this.busqueda.toLowerCase();
+      return this.sorted.filter(j =>
+        j.Jugador.toLowerCase().includes(q) ||
+        (j.Comandante || '').toLowerCase().includes(q)
+      );
+    },
+    top3() {
+      return this.sorted.slice(0, 3);
+    },
+    resto() {
+      return this.sorted.slice(3);
+    },
+    top1() {
+      return this.sorted[0] || null;
+    }
+  },
+  methods: {
+    ordinal(n) {
+      return n + 'º';
+    }
+  },
+  mounted() {
+    this.jugadores = DATA;
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
